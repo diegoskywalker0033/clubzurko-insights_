@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Megaphone, Database, Wallet, Upload, ChevronRight, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Users, Megaphone, Database, Wallet, Upload, ChevronRight, Menu, X, TrendingUp } from 'lucide-react'
 import { useDashboardStore } from '@/lib/store'
 import clsx from 'clsx'
 
@@ -12,6 +12,7 @@ const navItems = [
   { href: '/base-datos',    label: 'Base de Datos',     icon: Database },
   { href: '/captacion',     label: 'Captación',         icon: Megaphone },
   { href: '/presupuesto',   label: 'Presupuesto',       icon: Wallet },
+  { href: '/comparativa',  label: 'Comparativa SPLY',  icon: TrendingUp },
 ]
 
 export default function Sidebar() {
