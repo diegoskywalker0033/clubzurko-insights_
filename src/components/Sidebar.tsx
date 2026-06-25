@@ -2,7 +2,7 @@
 import {useState} from 'react'
 import Link from 'next/link'
 import {usePathname} from 'next/navigation'
-import {LayoutDashboard,Users,Megaphone,Database,Wallet,Upload,ChevronRight,Menu,X,TrendingUp,AlertTriangle,BarChart2} from 'lucide-react'
+import {LayoutDashboard,Users,Megaphone,Database,Wallet,Upload,ChevronRight,Menu,X,TrendingUp,BarChart2} from 'lucide-react'
 import {useDashboardStore} from '@/lib/store'
 import clsx from 'clsx'
 
@@ -13,7 +13,6 @@ const navItems=[
   {href:'/captacion',label:'Captación',icon:Megaphone},
   {href:'/presupuesto',label:'Presupuesto',icon:Wallet},
   {href:'/comparativa',label:'Comparativa SPLY',icon:TrendingUp},
-  {href:'/retrasos',label:'Retrasos',icon:AlertTriangle},
   {href:'/analisis',label:'Análisis',icon:BarChart2},
 ]
 
