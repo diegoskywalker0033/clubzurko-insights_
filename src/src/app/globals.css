@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply bg-gray-50 text-zurko-black; font-family: Roboto, sans-serif; }
+}
+
+@layer components {
+  .kpi-card { @apply bg-white rounded-xl p-5 shadow-card border border-gray-100; }
+  .kpi-label { @apply text-xs font-medium text-zurko-dark uppercase tracking-wider; }
+  .nav-link { @apply flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-zurko-dark hover:bg-gray-50 transition-colors text-sm; }
+  .nav-link.active { @apply bg-red-50 text-brand-red font-semibold; }
+  .filter-label { @apply block text-xs font-medium text-zurko-dark mb-1.5 uppercase tracking-wider; }
+  .data-table { @apply text-xs w-full; }
+  .data-table thead tr { @apply bg-gray-50 border-b border-gray-200; }
+  .data-table thead th { @apply text-left px-4 py-3 font-semibold text-zurko-dark text-xs uppercase tracking-wider; }
+  .data-table tbody tr { @apply border-b border-gray-50 hover:bg-gray-50 transition-colors; }
+  .data-table tbody td { @apply px-4 py-3; }
+}

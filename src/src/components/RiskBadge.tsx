@@ -1,0 +1,2 @@
+const M:Record<string,{label:string;cls:string}>={low:{label:'Bajo',cls:'bg-green-100 text-green-700'},medium:{label:'Medio',cls:'bg-amber-100 text-amber-700'},high:{label:'Alto',cls:'bg-orange-100 text-orange-700'},very_high:{label:'Muy alto',cls:'bg-red-100 text-red-700'}}
+export default function RiskBadge({riesgo}:{riesgo:string}){const m=M[riesgo]||M.low;return <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${m.cls}`}>{m.label}</span>}
