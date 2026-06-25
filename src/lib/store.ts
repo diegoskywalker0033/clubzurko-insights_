@@ -1,45 +1,15 @@
 import { create } from 'zustand'
-import type { ProyectoSemanal, Filtros } from '@/lib/types'
+import type { ProyectoSemanal, Filtros } from './types'
 
 interface DashboardStore {
-  // Raw data
-  rawData: ProyectoSemanal[]
-  setRawData: (data: ProyectoSemanal[]) => void
-
-  // Upload state
-  isUploaded: boolean
-  fileName: string
-  setUploaded: (name: string) => void
-
-  // Global filters
-  filtros: Filtros
-  setFiltro: <K extends keyof Filtros>(key: K, value: Filtros[K]) => void
-  resetFiltros: () => void
+  rawData: ProyectoSemanal[]; filtros: Filtros; isUploaded: boolean; fileName: string
+  setRawData: (data:ProyectoSemanal[], fileName:string) => void
+  setFiltros: (f:Partial<Filtros>) => void
 }
 
-const defaultFiltros: Filtros = {
-  sede: 'todas',
-  riesgo: 'todos',
-  semana_desde: 1,
-  semana_hasta: 53,
-  presupuesto: 'todos',
-}
-
-export const useDashboardStore = create<DashboardStore>((set) => ({
-  rawData: [],
-  isUploaded: false,
-  fileName: '',
-
-  setRawData: (data) => set({ rawData: data }),
-
-  setUploaded: (name) => set({ isUploaded: true, fileName: name }),
-
-  filtros: defaultFiltros,
-
-  setFiltro: (key, value) =>
-    set((state) => ({
-      filtros: { ...state.filtros, [key]: value },
-    })),
-
-  resetFiltros: () => set({ filtros: defaultFiltros }),
+export const useDashboardStore = create<DashboardStore>(set => ({
+  rawData: [], filtros: {sede:'todas',riesgo:'todos',semana_desde:1,semana_hasta:52,presupuesto:'todos'},
+  isUploaded: false, fileName: '',
+  setRawData: (data,fileName) => set({rawData:data,isUploaded:true,fileName}),
+  setFiltros: f => set(s=>({filtros:{...s.filtros,...f}})),
 }))

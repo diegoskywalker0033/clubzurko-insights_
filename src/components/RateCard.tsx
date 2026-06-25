@@ -1,39 +1,6 @@
-import { fmtPct } from '@/lib/kpis'
-import clsx from 'clsx'
-
-interface RateCardProps {
-  label: string
-  value: number | null
-  color?: 'green' | 'red' | 'amber' | 'blue' | 'purple'
-  className?: string
-}
-
-const colorMap = {
-  green: { bar: 'bg-green-500', text: 'text-green-700', bg: 'bg-green-50' },
-  red: { bar: 'bg-brand-red', text: 'text-brand-red', bg: 'bg-red-50' },
-  amber: { bar: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-50' },
-  blue: { bar: 'bg-blue-500', text: 'text-blue-700', bg: 'bg-blue-50' },
-  purple: { bar: 'bg-purple-500', text: 'text-purple-700', bg: 'bg-purple-50' },
-}
-
-export default function RateCard({ label, value, color = 'blue', className }: RateCardProps) {
-  const c = colorMap[color]
-  const pct = value !== null ? Math.min(value * 100, 100) : 0
-
-  return (
-    <div className={clsx('kpi-card', className)}>
-      <div className="flex items-center justify-between mb-2">
-        <p className="kpi-label">{label}</p>
-        <span className={clsx('text-sm font-bold', c.text)}>
-          {fmtPct(value)}
-        </span>
-      </div>
-      <div className="progress-bar">
-        <div
-          className={clsx('progress-fill', c.bar)}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  )
+import {fmtPct} from '@/lib/kpis'
+const C:Record<string,string>={blue:'bg-blue-500',green:'bg-green-500',red:'bg-brand-red',amber:'bg-amber-500',purple:'bg-purple-500'}
+export default function RateCard({label,value,color}:{label:string;value:number|null;color:string}){
+  const pct=value===null?0:Math.min(value*100,100)
+  return(<div className="kpi-card"><p className="kpi-label mb-2">{label}</p><p className="text-2xl font-bold text-zurko-black mb-2">{fmtPct(value)}</p><div className="h-1.5 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${C[color]||'bg-brand-red'}`} style={{width:`${pct}%`}}/></div></div>)
 }

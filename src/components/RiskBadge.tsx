@@ -1,17 +1,2 @@
-import clsx from 'clsx'
-
-const RISK_CONFIG = {
-  low: { label: 'Bajo', className: 'bg-green-100 text-green-800' },
-  medium: { label: 'Medio', className: 'bg-amber-100 text-amber-800' },
-  high: { label: 'Alto', className: 'bg-red-100 text-red-800' },
-  very_high: { label: 'Muy alto', className: 'bg-purple-100 text-purple-800' },
-}
-
-export default function RiskBadge({ riesgo }: { riesgo: string }) {
-  const config = RISK_CONFIG[riesgo as keyof typeof RISK_CONFIG] ?? { label: riesgo, className: 'bg-gray-100 text-gray-800' }
-  return (
-    <span className={clsx('text-[10px] font-medium px-2 py-0.5 rounded-full', config.className)}>
-      {config.label}
-    </span>
-  )
-}
+const M:Record<string,{label:string;cls:string}>={low:{label:'Bajo',cls:'bg-green-100 text-green-700'},medium:{label:'Medio',cls:'bg-amber-100 text-amber-700'},high:{label:'Alto',cls:'bg-orange-100 text-orange-700'},very_high:{label:'Muy alto',cls:'bg-red-100 text-red-700'}}
+export default function RiskBadge({riesgo}:{riesgo:string}){const m=M[riesgo]||M.low;return <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${m.cls}`}>{m.label}</span>}

@@ -1,162 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: 'Sansation';
-  src: url('/fonts/Sansation_Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 @layer base {
-  :root {
-    --brand-red: #B11C1F;
-    --brand-red-dark: #8A1517;
-    --zurko-dark: #505050;
-    --zurko-light: #C6C6C6;
-  }
-
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  html {
-    font-size: 14px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  body {
-    font-family: 'Roboto', system-ui, sans-serif;
-    background-color: #F7F7F7;
-    color: #1a1a1a;
-    line-height: 1.5;
-  }
-
-  h1, h2, h3 {
-    font-family: 'Sansation', 'Roboto', sans-serif;
-    font-weight: 700;
-  }
+  body { @apply bg-gray-50 text-zurko-black; font-family: Roboto, sans-serif; }
 }
 
 @layer components {
-  .kpi-card {
-    @apply bg-white rounded-lg p-5 shadow-card border border-gray-100 transition-shadow duration-200;
-  }
-  .kpi-card:hover {
-    @apply shadow-card-hover;
-  }
-
-  .kpi-value {
-    @apply text-3xl font-bold text-zurko-black;
-    font-family: 'Sansation', sans-serif;
-    letter-spacing: -0.02em;
-  }
-
-  .kpi-label {
-    @apply text-xs font-medium uppercase tracking-widest text-zurko-dark;
-  }
-
-  .kpi-delta-up {
-    @apply text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full;
-  }
-
-  .kpi-delta-down {
-    @apply text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full;
-  }
-
-  .section-title {
-    @apply text-lg font-bold text-zurko-black mb-4;
-    font-family: 'Sansation', sans-serif;
-  }
-
-  .filter-label {
-    @apply text-xs font-medium text-zurko-dark uppercase tracking-wider mb-1 block;
-  }
-
-  .nav-link {
-    @apply flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-zurko-dark transition-colors duration-150;
-  }
-
-  .nav-link:hover {
-    @apply bg-gray-100 text-zurko-black;
-  }
-
-  .nav-link.active {
-    @apply bg-brand-red text-white;
-  }
-
-  .progress-bar {
-    @apply h-1.5 rounded-full bg-gray-100 overflow-hidden;
-  }
-
-  .progress-fill {
-    @apply h-full rounded-full transition-all duration-500;
-  }
-}
-
-/* Recharts custom styles */
-.recharts-tooltip-wrapper .recharts-default-tooltip {
-  border-radius: 8px !important;
-  border: 1px solid #e5e7eb !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
-  font-family: 'Roboto', sans-serif !important;
-  font-size: 12px !important;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #C6C6C6;
-  border-radius: 2px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #505050;
-}
-
-/* Table styles */
-.data-table th {
-  @apply text-xs font-medium uppercase tracking-wider text-zurko-dark bg-gray-50 px-3 py-2.5 text-left border-b border-gray-200;
-}
-
-.data-table td {
-  @apply px-3 py-2.5 text-sm border-b border-gray-100 text-zurko-black;
-}
-
-.data-table tr:hover td {
-  @apply bg-gray-50;
-}
-
-/* Mobile tweaks */
-@media (max-width: 768px) {
-  .kpi-card {
-    padding: 0.875rem;
-  }
-
-  /* Prevent overflow on mobile */
-  .data-table {
-    font-size: 12px;
-  }
-
-  .data-table th,
-  .data-table td {
-    padding: 0.5rem 0.625rem;
-  }
-
-  /* Page padding on mobile */
-  .p-6 {
-    padding: 1rem;
-  }
+  .kpi-card { @apply bg-white rounded-xl p-5 shadow-card border border-gray-100; }
+  .kpi-label { @apply text-xs font-medium text-zurko-dark uppercase tracking-wider; }
+  .nav-link { @apply flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-zurko-dark hover:bg-gray-50 transition-colors text-sm; }
+  .nav-link.active { @apply bg-red-50 text-brand-red font-semibold; }
+  .filter-label { @apply block text-xs font-medium text-zurko-dark mb-1.5 uppercase tracking-wider; }
+  .data-table { @apply text-xs w-full; }
+  .data-table thead tr { @apply bg-gray-50 border-b border-gray-200; }
+  .data-table thead th { @apply text-left px-4 py-3 font-semibold text-zurko-dark text-xs uppercase tracking-wider; }
+  .data-table tbody tr { @apply border-b border-gray-50 hover:bg-gray-50 transition-colors; }
+  .data-table tbody td { @apply px-4 py-3; }
 }
