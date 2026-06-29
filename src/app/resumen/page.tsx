@@ -1,7 +1,7 @@
 'use client'
 import {useMemo} from 'react'
 import {useDashboardStore} from '@/lib/store'
-import {filtrarDatos,calcularKPIResumen,calcularAnalisisTemporal,fmtNum,fmtPct} from '@/lib/kpis'
+import {filtrarDatos,calcularKPIResumen,calcularAnalisisTemporal,fmtNum,fmtPct,safe} from '@/lib/kpis'
 import {DEMO_DATA} from '@/lib/demoData'
 import {PERFILES_DATA} from '@/lib/demoData2'
 import type {ProyectoSemanal,PerfilMes} from '@/lib/types'
@@ -57,8 +57,16 @@ export default function ResumenPage(){
       {conRetraso>0&&(<>
         <Div t="Alertas de retraso"/>
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="kpi-card border-l-4 border-l-amber-500"><p className="kpi-label mb-1">Proyectos con retraso</p><p className="text-2xl font-bold text-amber-600">{fmtNum(conRetraso)}</p><p className="text-xs text-zurko-dark mt-1">Ver detalle en &quot;Retrasos&quot;</p></div>
-          <div className="kpi-card border-l-4 border-l-red-500"><p className="kpi-label mb-1">Estudios con retraso</p><p className="text-2xl font-bold text-red-600">{fmtNum(estudiosRetraso)}</p><p className="text-xs text-zurko-dark mt-1">Identificador S00XXX</p></div>
+          <div className="kpi-card border-l-4 border-l-amber-500">
+            <p className="kpi-label mb-1">Proyectos con retraso</p>
+            <p className="text-2xl font-bold text-amber-600">{fmtNum(conRetraso)}</p>
+            <p className="text-xs text-zurko-dark mt-1">{fmtPct(safe(conRetraso,filtered.length))} del total de proyectos</p>
+          </div>
+          <div className="kpi-card border-l-4 border-l-red-500">
+            <p className="kpi-label mb-1">Estudios con retraso</p>
+            <p className="text-2xl font-bold text-red-600">{fmtNum(estudiosRetraso)}</p>
+            <p className="text-xs text-zurko-dark mt-1">{fmtPct(safe(estudiosRetraso, new Set(filtered.filter(r=>r.presupuesto.startsWith('S0')).map(r=>r.presupuesto)).size))} del total de estudios</p>
+          </div>
         </div>
       </>)}
       <Div t="Tendencia semanal"/>

@@ -3,6 +3,7 @@ import {useMemo,useState} from 'react'
 import {useDashboardStore} from '@/lib/store'
 import {filtrarDatos,calcularKPIResumen,calcularAnalisisTemporal,fmtNum,fmtPct,fmtDec,safe} from '@/lib/kpis'
 import {DEMO_DATA} from '@/lib/demoData'
+ import {ESTUDIO_NOMBRES} from '@/lib/demoData2'
 import type {ProyectoSemanal} from '@/lib/types'
 import PageHeader from '@/components/PageHeader'
 import FiltrosBar from '@/components/FiltrosBar'
@@ -171,7 +172,7 @@ export default function ReclutamientoPage(){
         {/* Pie estudios */}
         <div className="kpi-card">
           <h3 className="text-sm font-bold mb-1">Estudios con retraso vs total</h3>
-          <p className="text-xs text-zurko-dark mb-3">{retrasosData.estudiosConRetraso} de {retrasosData.totalEstudios} estudios (S00XXX únicos)</p>
+          <p className="text-xs text-zurko-dark mb-3">{retrasosData.estudiosConRetraso} de {retrasosData.totalEstudios} estudios afectados</p>
           <div className="flex items-center gap-4">
             <ResponsiveContainer width={160} height={160}>
               <PieChart>
@@ -196,7 +197,7 @@ export default function ReclutamientoPage(){
         {/* Pie proyectos */}
         <div className="kpi-card">
           <h3 className="text-sm font-bold mb-1">Proyectos con retraso vs total</h3>
-          <p className="text-xs text-zurko-dark mb-3">{retrasosData.proyRetrasados} de {retrasosData.totalProy} proyectos</p>
+          <p className="text-xs text-zurko-dark mb-3">{retrasosData.proyRetrasados} de {retrasosData.totalProy} proyectos en la selección actual</p>
           <div className="flex items-center gap-4">
             <ResponsiveContainer width={160} height={160}>
               <PieChart>
@@ -227,9 +228,12 @@ export default function ReclutamientoPage(){
             <h3 className="text-sm font-bold">Estudios afectados por retraso</h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            {retrasosData.listaEstudios.map(s=>(
-              <span key={s} className="text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 rounded-full">{s}</span>
-            ))}
+            {retrasosData.listaEstudios.map(s=>{const nombres=ESTUDIO_NOMBRES as Record<string,string>;const nombre=nombres[s]||'';return(
+              <div key={s} className="group relative">
+                <span className="text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 rounded-full cursor-default hover:bg-amber-100 transition-colors">{s}</span>
+                {nombre&&<div className="absolute bottom-full left-0 mb-2 z-10 hidden group-hover:block bg-zurko-black text-white text-[10px] rounded-lg px-3 py-2 whitespace-nowrap shadow-lg max-w-[280px] leading-relaxed">{nombre}</div>}
+              </div>
+            )})}
           </div>
         </div>
       )}

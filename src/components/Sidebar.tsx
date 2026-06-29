@@ -2,18 +2,19 @@
 import {useState} from 'react'
 import Link from 'next/link'
 import {usePathname} from 'next/navigation'
-import {LayoutDashboard,Users,Megaphone,Database,Wallet,Upload,ChevronRight,Menu,X,TrendingUp,BarChart2} from 'lucide-react'
+import {Home,LayoutDashboard,Users,Megaphone,Database,Wallet,Upload,ChevronRight,Menu,X,TrendingUp,BarChart2} from 'lucide-react'
 import {useDashboardStore} from '@/lib/store'
 import clsx from 'clsx'
 
 const navItems=[
-  {href:'/resumen',label:'Resumen Ejecutivo',icon:LayoutDashboard},
-  {href:'/reclutamiento',label:'Reclutamiento',icon:Users},
-  {href:'/base-datos',label:'Base de Datos',icon:Database},
-  {href:'/captacion',label:'Captación',icon:Megaphone},
-  {href:'/presupuesto',label:'Presupuesto',icon:Wallet},
-  {href:'/comparativa',label:'Comparativa SPLY',icon:TrendingUp},
-  {href:'/analisis',label:'Análisis',icon:BarChart2},
+  {href:'/inicio',      label:'ClubZurko Insights', icon:Home},
+  {href:'/resumen',     label:'Resumen Ejecutivo',   icon:LayoutDashboard},
+  {href:'/reclutamiento',label:'Reclutamiento',      icon:Users},
+  {href:'/base-datos',  label:'Base de Datos',       icon:Database},
+  {href:'/captacion',   label:'Captación',           icon:Megaphone},
+  {href:'/presupuesto', label:'Presupuesto',         icon:Wallet},
+  {href:'/comparativa', label:'Comparativa SPLY',    icon:TrendingUp},
+  {href:'/analisis',    label:'Análisis',            icon:BarChart2},
 ]
 
 export default function Sidebar(){
