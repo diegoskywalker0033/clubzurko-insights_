@@ -27,13 +27,15 @@ export default function ResumenPage(){
   const totalBDD=sedes.reduce((s,sede)=>s+(latest[sede]?.total_bdd||0),0)
   const bySede=useMemo(()=>sedes.map(sede=>({sede,...calcularKPIResumen(filtered.filter(r=>r.sede===sede))})),[filtered])
   const conRetraso=filtered.filter(r=>r.retraso===1).length
-  const estudiosRetraso=new Set(filtered.filter(r=>r.retraso===1&&r.presupuesto.startsWith('S0')).map(r=>r.presupuesto)).size
+  const totalEstudios=Array.from(new Set(filtered.filter(r=>r.presupuesto.startsWith('S0')).map(r=>r.presupuesto))).length
+  const estudiosRetraso=Array.from(new Set(filtered.filter(r=>r.retraso===1&&r.presupuesto.startsWith('S0')).map(r=>r.presupuesto))).length
+
   return(
     <div className="p-6 max-w-[1400px]">
       <PageHeader title="Resumen Ejecutivo" subtitle="Vista consolidada · Reclutamiento y Base de Datos"/>
       <div className="mb-5"><FileUploader/></div>
       <div className="mb-6"><FiltrosBar/></div>
-      <Div t="Base de datos — voluntarios activos"/>
+      <Div t="Base de datos"/>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
         <KpiCard label="Total BDD" value={fmtNum(totalBDD)} accent sub="todas las sedes"/>
         {sedes.map(s=><KpiCard key={s} label={s} value={fmtNum(latest[s]?.total_bdd||0)} sub="voluntarios activos"/>)}
@@ -65,7 +67,7 @@ export default function ResumenPage(){
           <div className="kpi-card border-l-4 border-l-red-500">
             <p className="kpi-label mb-1">Estudios con retraso</p>
             <p className="text-2xl font-bold text-red-600">{fmtNum(estudiosRetraso)}</p>
-            <p className="text-xs text-zurko-dark mt-1">{fmtPct(safe(estudiosRetraso, new Set(filtered.filter(r=>r.presupuesto.startsWith('S0')).map(r=>r.presupuesto)).size))} del total de estudios</p>
+            <p className="text-xs text-zurko-dark mt-1">{fmtPct(safe(estudiosRetraso,totalEstudios))} de {fmtNum(totalEstudios)} estudios activos</p>
           </div>
         </div>
       </>)}

@@ -1,7 +1,7 @@
 'use client'
-import {useDashboardStore} from '@/lib/store'
-import {DEMO_DATA} from '@/lib/demoData'
-import type {ProyectoSemanal} from '@/lib/types'
+import{useDashboardStore}from'@/lib/store'
+import{DEMO_DATA}from'@/lib/demoData'
+import type{ProyectoSemanal}from'@/lib/types'
 export default function FiltrosBar(){
   const{filtros,setFiltros,rawData,isUploaded}=useDashboardStore()
   const data=(isUploaded?rawData:DEMO_DATA) as ProyectoSemanal[]
