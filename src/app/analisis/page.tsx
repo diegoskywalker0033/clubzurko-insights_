@@ -2,133 +2,114 @@
 import {useMemo,useState} from 'react'
 import {useDashboardStore} from '@/lib/store'
 import {DEMO_DATA} from '@/lib/demoData'
-import {DATA_2025} from '@/lib/demoData2'
+import {SPLY_2025,AGENDA_2025,CRECIMIENTO_DATA} from '@/lib/demoData2'
 import {fmtNum,fmtPct,safe} from '@/lib/kpis'
-import type {ProyectoSemanal} from '@/lib/types'
+import type {ProyectoSemanal,CrecimientoSemanal} from '@/lib/types'
 import PageHeader from '@/components/PageHeader'
 import {ResponsiveContainer,BarChart,Bar,LineChart,Line,XAxis,YAxis,CartesianGrid,Tooltip,Legend} from 'recharts'
 
 function Div({t}:{t:string}){return <div className="flex items-center gap-3 mb-3 mt-7"><div className="w-1 h-5 bg-brand-red rounded-full"/><h2 className="text-sm font-bold text-zurko-black uppercase tracking-wider">{t}</h2></div>}
 
 type DimKey='tipo_estudio'|'cliente'
-type MetricKey='sol_sin_extra'|'reclutados'|'iniciados'|'sobre_n'|'sobre_nx'|'tasa_asistencia'|'tasa_inicios'|'cumpl_n'
-
-const METRIC_OPTS:{key:MetricKey;label:string;pct:boolean}[]=[
-  {key:'sol_sin_extra',label:'Solicitados (N)',pct:false},
-  {key:'reclutados',label:'Reclutados',pct:false},
-  {key:'iniciados',label:'Iniciados',pct:false},
-  {key:'sobre_n',label:'% sobre N',pct:true},
-  {key:'sobre_nx',label:'% sobre N+Extra',pct:true},
-  {key:'tasa_asistencia',label:'Tasa de asistencia',pct:true},
-  {key:'tasa_inicios',label:'Tasa de inicios',pct:true},
-  {key:'cumpl_n',label:'% Proyectos en N',pct:true},
-]
-
-// Only compare types with enough volume in BOTH years
-const SAFE_DEPT_GROUPS=['EFI','TOL','SOLAR']
-const DEPT_MAP_2026:Record<string,string>={SKINCARE:'EFI',HAIRCARE:'EFI',EFICACIA:'EFI','IN VITRO+IN VIVO':'EFI',TOLERANCIA:'TOL',SOLAR:'SOLAR'}
+const DEPT_GROUP:Record<string,string>={SKINCARE:'EFICACIA',HAIRCARE:'EFICACIA',EFICACIA:'EFICACIA','IN VITRO+IN VIVO':'EFICACIA',TOLERANCIA:'TOLERANCIA',SOLAR:'SOLAR'}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function calcByDim(data:ProyectoSemanal[],key:DimKey):any[]{
   const map=new Map<string,ProyectoSemanal[]>()
-  for(const r of data){
-    const rec=r as unknown as Record<string,string>
-    const k=(rec[key]||'Sin datos').trim()||'Sin datos'
-    if(!map.has(k))map.set(k,[]);map.get(k)!.push(r)
-  }
+  for(const r of data){const rec=r as unknown as Record<string,string>;const k=(rec[key]||'Sin datos').trim()||'Sin datos';if(!map.has(k))map.set(k,[]);map.get(k)!.push(r)}
   return Array.from(map.entries()).map(([dim,rows])=>{
     const s=(f:keyof ProyectoSemanal)=>rows.reduce((a,r)=>a+(Number(r[f])||0),0)
     const reclutados=s('reclutados'),iniciados=s('iniciados'),sol_n=s('sol_sin_extra'),sol_nx=s('sol_con_extra'),asistencia=s('asistencia'),pn=s('proyectoen_n'),n=rows.length
     return{dim,n,reclutados,iniciados,sol_n,sol_nx,sobre_n:safe(iniciados,sol_n),sobre_nx:safe(iniciados,sol_nx),cumpl_n:safe(pn,n),tasa_asistencia:safe(asistencia,reclutados),tasa_inicios:safe(iniciados,reclutados)}
-  }).sort((a,b)=>b.n-a.n)
+  }).sort((a:any,b:any)=>b.n-a.n)
 }
 
 export default function AnalisisPage(){
   const{rawData,isUploaded}=useDashboardStore()
   const[deptFilter,setDeptFilter]=useState('TODOS')
   const[dim,setDim]=useState<DimKey>('tipo_estudio')
-  const[metric,setMetric]=useState<MetricKey>('sobre_n')
+  const[compSede,setCompSede]=useState('todas')
   const[compDept,setCompDept]=useState('TODOS')
-  const[compTipo,setCompTipo]=useState('TODOS')
 
   const src=(isUploaded?rawData:DEMO_DATA) as ProyectoSemanal[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const d2025=DATA_2025 as any[]
+  const sply=SPLY_2025 as any[]
+  const crec2026=CRECIMIENTO_DATA as CrecimientoSemanal[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const agenda25=AGENDA_2025 as any[]
 
-  const depts=useMemo(()=>['TODOS',...Array.from(new Set(src.map(r=>r.departamento).filter(d=>d&&d!=='NAN'&&d!=='UNDEFINED'))).sort()],[src])
-  const tipos=useMemo(()=>Array.from(new Set(src.map(r=>r.tipo_estudio).filter(t=>t&&t!=='NAN'&&t!=='UNDEFINED'))).sort(),[src])
-
+  const depts=useMemo(()=>['TODOS',...Array.from(new Set(src.map(r=>r.departamento).filter(d=>d&&d!=='NAN'))).sort()],[src])
   const filtered=useMemo(()=>deptFilter==='TODOS'?src:src.filter(r=>r.departamento===deptFilter),[src,deptFilter])
   const dimRows=useMemo(()=>calcByDim(filtered,dim),[filtered,dim])
+  const maxW=useMemo(()=>Math.max(...src.map(r=>r.week),0),[src])
 
-  const metaOpt=METRIC_OPTS.find(m=>m.key===metric)!
-
-  // Fix: sol_n maps to 'sol_n' in dimRows, but MetricKey uses 'sol_sin_extra' - map correctly
-  const getVal=(r:Record<string,number|null>,key:MetricKey):number|null=>{
-    if(key==='sol_sin_extra') return r.sol_n
-    if(key==='sobre_n') return r.sobre_n
-    if(key==='sobre_nx') return r.sobre_nx
-    if(key==='tasa_asistencia') return r.tasa_asistencia
-    if(key==='tasa_inicios') return r.tasa_inicios
-    if(key==='cumpl_n') return r.cumpl_n
-    return r[key]
-  }
-
-  const chartDim=useMemo(()=>dimRows.slice(0,15).map(r=>{
-    const raw=getVal(r,metric)
-    return{name:r.dim.length>18?r.dim.substring(0,18)+'…':r.dim,value:metaOpt.pct?(raw??0)*100:(raw??0)}
-  }),[dimRows,metric,metaOpt])
-
-  // Totals row for table
   const totals=useMemo(()=>{
-    const s=(key:string)=>dimRows.reduce((a:number,r:Record<string,number|null>)=>a+(Number(r[key])||0),0)
-    const reclutados=s('reclutados'),iniciados=s('iniciados'),sol_n=s('sol_n'),sol_nx=s('sol_nx'),n=dimRows.reduce((a:number,r:Record<string,number|null>)=>a+(Number(r.n)||0),0)
-    const asistencia=dimRows.reduce((a:number,r:Record<string,number|null>)=>a+(Number(r.tasa_asistencia||0)*Number(r.reclutados||0)),0)
-    return{n,reclutados,iniciados,sol_n,sol_nx,sobre_n:safe(iniciados,sol_n),sobre_nx:safe(iniciados,sol_nx),tasa_asistencia:safe(asistencia,reclutados),tasa_inicios:safe(iniciados,reclutados),cumpl_n:null}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sr=(key:string)=>dimRows.reduce((a:number,r:any)=>a+(Number(r[key])||0),0)
+    const reclutados=sr('reclutados'),iniciados=sr('iniciados'),sol_n=sr('sol_n'),n=dimRows.reduce((a:number,r:any)=>a+(Number(r.n)||0),0)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const asistencia=dimRows.reduce((a:number,r:any)=>a+(Number(r.tasa_asistencia||0)*Number(r.reclutados||0)),0)
+    return{n,reclutados,iniciados,sol_n,sobre_n:safe(iniciados,sol_n),tasa_asistencia:safe(asistencia,reclutados),tasa_inicios:safe(iniciados,reclutados)}
   },[dimRows])
 
-  // Comparison 2025 vs 2026 - STRICTLY same period (W1 to maxWeek2026)
-  const compData=useMemo(()=>{
-    const f26=src.filter(r=>{
-      if(compDept!=='TODOS'&&r.departamento!==compDept) return false
-      if(compTipo!=='TODOS'&&r.tipo_estudio!==compTipo) return false
-      return true
-    })
-    const maxW26=Math.max(...f26.map(r=>r.week),0)
+  // SPLY comparison
+  const splyFiltered=useMemo(()=>sply.filter((r:any)=>{
+    if(compSede!=='todas'&&r.sede!==compSede) return false
+    if(compDept!=='TODOS'&&r.dept!==compDept) return false
+    return true
+  }),[sply,compSede,compDept])
 
-    // 2025: filter to safe dept groups only, same period
-    const deptGroup26=compDept!=='TODOS'?DEPT_MAP_2026[compDept]||null:null
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const f25=d2025.filter((r:any)=>{
-      if(r.week>maxW26) return false
-      if(deptGroup26){const g=r.dept_group||'';if(g!==deptGroup26)return false}
-      else{if(!SAFE_DEPT_GROUPS.includes(r.dept_group||''))return false}
-      return true
-    })
+  const f26=useMemo(()=>src.filter(r=>{
+    if(compSede!=='todas'&&r.sede!==compSede) return false
+    if(compDept!=='TODOS'&&DEPT_GROUP[r.departamento]!==compDept) return false
+    return true
+  }),[src,compSede,compDept])
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sum26=(k:string)=>f26.reduce((s:number,r:any)=>s+(Number(r[k])||0),0)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sum25=(k:string)=>f25.reduce((s:number,r:any)=>s+(Number(r[k])||0),0)
+  const kpi26=useMemo(()=>{
+    const s=(k:keyof ProyectoSemanal)=>f26.reduce((a,r)=>a+(Number(r[k])||0),0)
+    const sol=s('sol_sin_extra'),ini=s('iniciados'),rec=s('reclutados'),asis=s('asistencia')
+    return{sol_n:sol,iniciados:ini,reclutados:rec,sobre_n:safe(ini,sol),tasa_asis:safe(asis,rec),tasa_ini:safe(ini,rec)}
+  },[f26])
 
-    const r26={n:f26.length,reclutados:sum26('reclutados'),iniciados:sum26('iniciados'),sol_n:sum26('sol_sin_extra'),asistencia:sum26('asistencia')}
-    const r25={n:f25.length,reclutados:sum25('reclutados'),iniciados:sum25('iniciados'),sol_n:sum25('sol_sin_extra')}
-
-    // Weekly - only weeks present in both
+  const kpi25=useMemo(()=>{
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const wAgg=(data:any[],key:string)=>{const m=new Map<number,number>();data.forEach((r:any)=>{const w=Number(r.week);m.set(w,(m.get(w)||0)+(Number(r[key])||0))});return m}
-    const w26r=wAgg(f26,'reclutados'),w26i=wAgg(f26,'iniciados'),w25r=wAgg(f25,'reclutados'),w25i=wAgg(f25,'iniciados')
+    const s=(k:string)=>splyFiltered.reduce((a:number,r:any)=>a+(Number(r[k])||0),0)
+    const sol=s('total_n'),ini=s('total_ini'),rec=s('total_reclu')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tasa_avg=splyFiltered.length>0?splyFiltered.reduce((a:number,r:any)=>a+r.tasa_asistencia,0)/splyFiltered.length:0
+    return{sol_n:sol,iniciados:ini,reclutados:rec,sobre_n:safe(ini,sol),tasa_asis:tasa_avg,tasa_ini:safe(ini,rec)}
+  },[splyFiltered])
+
+  const weeklyChart=useMemo(()=>{
+    const w26r=new Map<number,number>(),w26i=new Map<number,number>()
+    for(const r of f26){w26r.set(r.week,(w26r.get(r.week)||0)+r.reclutados);w26i.set(r.week,(w26i.get(r.week)||0)+r.iniciados)}
+    const w25r=new Map<number,number>(),w25i=new Map<number,number>()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for(const s of splyFiltered){for(const w of (s.weekly||[]) as any[]){if(w.week>maxW)continue;w25r.set(w.week,(w25r.get(w.week)||0)+(w.reclutados||0));w25i.set(w.week,(w25i.get(w.week)||0)+(w.iniciados||0))}}
     const allW=Array.from(new Set([...Array.from(w26r.keys()),...Array.from(w25r.keys())])).sort((a,b)=>a-b)
-    const weekly=allW.map(w=>({'week':`W${w}`,'Reclut 2026':w26r.get(w)??0,'Reclut 2025':w25r.get(w)??0,'Inic 2026':w26i.get(w)??0,'Inic 2025':w25i.get(w)??0}))
+    return allW.map(w=>({'week':`W${w}`,'Reclut. 2026':w26r.get(w)??0,'Reclut. 2025':w25r.get(w)??0,'Inic. 2026':w26i.get(w)??0,'Inic. 2025':w25i.get(w)??0}))
+  },[f26,splyFiltered,maxW])
 
-    return{r26,r25,weekly,maxW26}
-  },[src,d2025,compDept,compTipo])
+  const altasChart=useMemo(()=>{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const a25f=compSede==='todas'?agenda25:agenda25.filter((r:any)=>r.sede===compSede)
+    const a26f=compSede==='todas'?crec2026:crec2026.filter(r=>r.sede===compSede)
+    const m25=new Map<number,number>(),m26=new Map<number,number>()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for(const r of a25f){if(r.week<=maxW)m25.set(r.week,(m25.get(r.week)||0)+r.altas)}
+    for(const r of a26f){m26.set(r.week,(m26.get(r.week)||0)+r.altas)}
+    const allW=Array.from(new Set([...Array.from(m25.keys()),...Array.from(m26.keys())])).sort((a,b)=>a-b)
+    return allW.map(w=>({'week':`W${w}`,'Altas 2026':m26.get(w)??0,'Altas 2025':m25.get(w)??0}))
+  },[compSede,crec2026,agenda25,maxW])
+
+  const totalAltas26=altasChart.reduce((s,r)=>s+r['Altas 2026'],0)
+  const totalAltas25=altasChart.reduce((s,r)=>s+r['Altas 2025'],0)
 
   return(
     <div className="p-6 max-w-[1400px]">
-      <PageHeader title="Rendimiento por dimensión" subtitle="Análisis por departamento, tipo de estudio y cliente · Comparativa 2025 vs 2026"/>
+      <PageHeader title="Rendimiento por dimensión" subtitle="Análisis interno 2026 · Comparativa SPLY con datos reales de Métricas Mad/AB"/>
 
-      {/* Dept filter - buttons */}
+      {/* ANÁLISIS INTERNO */}
       <div className="bg-white border border-gray-100 rounded-lg px-5 py-4 shadow-card mb-6">
         <label className="filter-label mb-2 block">Filtrar por departamento</label>
         <div className="flex flex-wrap gap-2">
@@ -141,139 +122,168 @@ export default function AnalisisPage(){
         </div>
         {deptFilter!=='TODOS'&&<p className="text-[11px] text-zurko-dark mt-2">{filtered.length} proyectos en {deptFilter}</p>}
       </div>
-
-      {/* Dim + metric */}
-      <div className="flex flex-wrap gap-4 bg-white border border-gray-100 rounded-lg px-5 py-4 shadow-card mb-6">
-        <div><label className="filter-label">Desagregar por</label>
-          <select value={dim} onChange={e=>setDim(e.target.value as DimKey)} className="text-sm border border-gray-200 rounded-md px-3 py-1.5 bg-white focus:outline-none focus:border-brand-red">
-            <option value="tipo_estudio">Tipo de estudio</option>
-            <option value="cliente">Cliente</option>
-          </select></div>
-        <div><label className="filter-label">Métrica</label>
-          <select value={metric} onChange={e=>setMetric(e.target.value as MetricKey)} className="text-sm border border-gray-200 rounded-md px-3 py-1.5 bg-white focus:outline-none focus:border-brand-red">
-            {METRIC_OPTS.map(m=><option key={m.key} value={m.key}>{m.label}</option>)}
-          </select></div>
+      <div className="bg-white border border-gray-100 rounded-lg px-5 py-4 shadow-card mb-6">
+        <label className="filter-label">Desagregar por</label>
+        <select value={dim} onChange={e=>setDim(e.target.value as DimKey)} className="text-sm border border-gray-200 rounded-md px-3 py-1.5 bg-white focus:outline-none focus:border-brand-red ml-2">
+          <option value="tipo_estudio">Tipo de estudio</option>
+          <option value="cliente">Cliente</option>
+        </select>
       </div>
 
-      <Div t={`${metaOpt.label} por ${dim==='tipo_estudio'?'tipo de estudio':'cliente'}${deptFilter!=='TODOS'?` · ${deptFilter}`:''}`}/>
-      <div className="kpi-card mb-6">
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={chartDim} barCategoryGap="25%">
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false}/>
-            <XAxis dataKey="name" tick={{fontSize:10,fill:'#505050'}} axisLine={false} tickLine={false} interval={0} angle={-10} textAnchor="end" height={45}/>
-            <YAxis tick={{fontSize:10,fill:'#505050'}} axisLine={false} tickLine={false} tickFormatter={v=>metaOpt.pct?`${v.toFixed(0)}%`:fmtNum(v)}/>
-            <Tooltip formatter={(v:number)=>metaOpt.pct?`${v.toFixed(1)}%`:fmtNum(v)}/>
-            <Bar dataKey="value" name={metaOpt.label} fill="#B11C1F" radius={[2,2,0,0]}/>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Table with totals */}
-      <Div t="Tabla completa"/>
-      <div className="kpi-card p-0 overflow-hidden mb-10">
+      <Div t={`Tabla 2026 — por ${dim==='tipo_estudio'?'tipo de estudio':'cliente'}${deptFilter!=='TODOS'?` · ${deptFilter}`:''}`}/>
+      <div className="kpi-card p-0 overflow-hidden mb-8">
         <div className="overflow-x-auto">
           <table className="w-full data-table whitespace-nowrap">
-            <thead><tr>
-              <th>{dim==='tipo_estudio'?'Tipo de estudio':'Cliente'}</th>
-              <th>N Proy.</th><th>Sol. N</th><th>Reclutados</th><th>Iniciados</th>
-              <th>% sobre N</th><th>% sobre N+x</th><th>T. asistencia</th><th>T. inicios</th><th>% Proy en N</th>
-            </tr></thead>
+            <thead><tr><th>{dim==='tipo_estudio'?'Tipo de estudio':'Cliente'}</th><th>N Proy.</th><th>N Sol.</th><th>Reclutados</th><th>Iniciados</th><th>% sobre N</th><th>% sobre N+x</th><th>T. asistencia</th><th>T. inicios</th><th>% Proy en N</th></tr></thead>
             <tbody>
-              {dimRows.map((r,i)=>(
+              {dimRows.map((r:any,i:number)=>(
                 <tr key={i}>
                   <td className="font-medium max-w-[200px] truncate" title={r.dim}>{r.dim}</td>
-                  <td>{fmtNum(r.n)}</td>
-                  <td>{fmtNum(r.sol_n)}</td>
+                  <td>{fmtNum(r.n)}</td><td>{fmtNum(r.sol_n)}</td>
                   <td className="font-bold text-brand-red">{fmtNum(r.reclutados)}</td>
                   <td className="font-bold">{fmtNum(r.iniciados)}</td>
                   <td className={`font-bold ${(r.sobre_n??0)>=1?'text-green-600':'text-red-600'}`}>{fmtPct(r.sobre_n)}</td>
                   <td className={`font-bold ${(r.sobre_nx??0)>=1?'text-green-600':'text-amber-600'}`}>{fmtPct(r.sobre_nx)}</td>
-                  <td>{fmtPct(r.tasa_asistencia)}</td>
-                  <td>{fmtPct(r.tasa_inicios)}</td>
+                  <td>{fmtPct(r.tasa_asistencia)}</td><td>{fmtPct(r.tasa_inicios)}</td>
                   <td><div className="flex items-center gap-2"><div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-brand-red rounded-full" style={{width:`${Math.min((r.cumpl_n??0)*100,100)}%`}}/></div><span>{fmtPct(r.cumpl_n)}</span></div></td>
                 </tr>
               ))}
-              {/* Totals row */}
               <tr className="bg-gray-50 font-bold border-t-2 border-gray-200">
-                <td className="font-bold text-zurko-black">TOTAL</td>
-                <td>{fmtNum(totals.n)}</td>
-                <td>{fmtNum(totals.sol_n)}</td>
-                <td className="text-brand-red">{fmtNum(totals.reclutados)}</td>
-                <td>{fmtNum(totals.iniciados)}</td>
+                <td className="font-bold">TOTAL</td><td>{fmtNum(totals.n)}</td><td>{fmtNum(totals.sol_n)}</td>
+                <td className="text-brand-red">{fmtNum(totals.reclutados)}</td><td>{fmtNum(totals.iniciados)}</td>
                 <td className={`${(totals.sobre_n??0)>=1?'text-green-600':'text-red-600'}`}>{fmtPct(totals.sobre_n)}</td>
-                <td className={`${(totals.sobre_nx??0)>=1?'text-green-600':'text-amber-600'}`}>{fmtPct(totals.sobre_nx)}</td>
-                <td>{fmtPct(totals.tasa_asistencia)}</td>
-                <td>{fmtPct(totals.tasa_inicios)}</td>
-                <td>—</td>
+                <td>—</td><td>{fmtPct(totals.tasa_asistencia)}</td><td>{fmtPct(totals.tasa_inicios)}</td><td>—</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* ══ COMPARATIVA 2025 vs 2026 ══ */}
-      <div className="border-t-2 border-gray-100 pt-8">
+      {/* COMPARATIVA 2025 vs 2026 */}
+      <div className="border-t-4 border-gray-200 pt-6">
         <h2 className="text-lg font-bold text-zurko-black mb-1">Comparativa 2025 vs 2026</h2>
-        <p className="text-xs text-zurko-dark mb-5">Mismo período (W1–W{compData.maxW26}) · Solo grupos con datos consistentes en ambos años (EFI/TOL/SOLAR)</p>
+        <p className="text-xs text-zurko-dark mb-5">Datos 2025 de Métricas Mad y Métricas AB · Período: W1–W{maxW} · BCN sin datos 2025</p>
 
         <div className="flex flex-wrap gap-4 bg-white border border-gray-100 rounded-lg px-5 py-4 shadow-card mb-6">
+          <div><label className="filter-label">Sede</label>
+            <select value={compSede} onChange={e=>setCompSede(e.target.value)} className="text-sm border border-gray-200 rounded-md px-3 py-1.5 bg-white focus:outline-none focus:border-brand-red">
+              <option value="todas">Madrid + Albacete</option>
+              <option value="Madrid">Madrid</option>
+              <option value="Albacete">Albacete</option>
+            </select></div>
           <div><label className="filter-label">Departamento</label>
             <select value={compDept} onChange={e=>setCompDept(e.target.value)} className="text-sm border border-gray-200 rounded-md px-3 py-1.5 bg-white focus:outline-none focus:border-brand-red">
-              <option value="TODOS">Todos (EFI+TOL+SOLAR)</option>
-              {['SKINCARE','HAIRCARE','TOLERANCIA','SOLAR'].map(d=><option key={d} value={d}>{d}</option>)}
+              <option value="TODOS">Todos</option>
+              <option value="EFICACIA">EFICACIA (Skincare+Haircare)</option>
+              <option value="TOLERANCIA">TOLERANCIA</option>
+              <option value="SOLAR">SOLAR (solo Madrid 2025)</option>
             </select></div>
-          <div><label className="filter-label">Tipo de estudio</label>
-            <select value={compTipo} onChange={e=>setCompTipo(e.target.value)} className="text-sm border border-gray-200 rounded-md px-3 py-1.5 bg-white focus:outline-none focus:border-brand-red">
-              <option value="TODOS">Todos los tipos</option>
-              {tipos.map(t=><option key={t} value={t}>{t}</option>)}
-            </select></div>
-          <div className="flex items-end"><p className="text-xs text-zurko-dark">2026: <strong>{compData.r26.n}</strong> proy · 2025: <strong>{compData.r25.n}</strong> proy</p></div>
         </div>
 
-        {/* KPI cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          {([['Solicitados N','sol_n'],['Reclutados','reclutados'],['Iniciados','iniciados'],['% sobre N',null]] as [string,string|null][]).map(([label,k],i)=>{
-            const v26=k?compData.r26[k as keyof typeof compData.r26]:safe(compData.r26.iniciados,compData.r26.sol_n)
-            const v25=k?compData.r25[k as keyof typeof compData.r25]:safe(compData.r25.iniciados,compData.r25.sol_n)
-            const isPct=i===3
-            const fmt=(v:number|null|undefined)=>v===null||v===undefined?'—':isPct?fmtPct(Number(v)):fmtNum(Number(v))
-            const delta=(typeof v26==='number'&&typeof v25==='number'&&v25!==0)?(v26-v25)/v25:null
+        {/* KPI comparison */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          {([['N Solicitada','sol_n',false],['Reclutados','reclutados',false],['Iniciados','iniciados',false],['% sobre N','sobre_n',true],['T. Asistencia','tasa_asis',true],['T. Inicios','tasa_ini',true]] as [string,string,boolean][]).map(([label,key,isPct])=>{
+            const v26=kpi26[key as keyof typeof kpi26] as number|null
+            const v25=kpi25[key as keyof typeof kpi25] as number|null
+            const fmt=(v:number|null)=>v===null?'—':isPct?fmtPct(v):fmtNum(v)
+            const delta=typeof v26==='number'&&typeof v25==='number'&&v25!==0?(v26-v25)/v25:null
             return(
               <div key={label} className="kpi-card">
                 <p className="kpi-label mb-2">{label}</p>
-                <div className="flex gap-3">
-                  <div><p className="text-[10px] text-brand-red font-medium mb-0.5">2026</p><p className="text-xl font-bold text-brand-red">{fmt(v26)}</p></div>
-                  <div><p className="text-[10px] text-zurko-dark font-medium mb-0.5">2025</p><p className="text-xl font-bold text-zurko-dark">{fmt(v25)}</p></div>
+                <div className="flex gap-2 items-end mb-1">
+                  <div><p className="text-[10px] text-brand-red font-medium">2026</p><p className="text-xl font-bold text-brand-red">{fmt(v26)}</p></div>
+                  <div className="mb-0.5"><p className="text-[10px] text-zurko-dark font-medium">2025</p><p className="text-lg font-bold text-zurko-dark">{fmt(v25)}</p></div>
                 </div>
-                {delta!==null&&<p className={`text-[11px] font-medium mt-2 ${delta>=0?'text-green-600':'text-red-600'}`}>{delta>=0?'+':''}{(delta*100).toFixed(1)}% vs 2025</p>}
+                {delta!==null&&<p className={`text-[10px] font-semibold ${delta>=0?'text-green-600':'text-red-600'}`}>{delta>=0?'+':''}{(delta*100).toFixed(1)}% vs 2025</p>}
               </div>
             )
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="kpi-card"><h3 className="text-sm font-bold mb-4">Reclutados semanales</h3>
+        {/* Desglose por sede+dept */}
+        {splyFiltered.length>0&&(
+          <div className="kpi-card p-0 overflow-hidden mb-6">
+            <div className="px-5 py-3 border-b border-gray-100 bg-gray-50"><p className="text-xs font-bold text-zurko-dark uppercase tracking-wider">Detalle 2025 por sede y departamento — fuente: Métricas Mad / Métricas AB</p></div>
+            <div className="overflow-x-auto">
+              <table className="w-full data-table whitespace-nowrap">
+                <thead><tr><th>Sede</th><th>Dpto.</th><th>N Sol.</th><th>Reclutados</th><th>Iniciados</th><th>% sobre N</th><th>T. Reclu</th><th>T. Asist.</th><th>Sem. sobre N</th><th>% Cumpl. N</th></tr></thead>
+                <tbody>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {splyFiltered.map((r:any,i:number)=>(
+                    <tr key={i}>
+                      <td className="font-medium">{r.sede}</td>
+                      <td><span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full font-medium">{r.dept}</span></td>
+                      <td>{fmtNum(r.total_n)}</td>
+                      <td className="font-bold text-brand-red">{fmtNum(r.total_reclu)}</td>
+                      <td className="font-bold">{fmtNum(r.total_ini)}</td>
+                      <td className={`font-bold ${r.sobre_n>=1?'text-green-600':'text-red-600'}`}>{fmtPct(r.sobre_n)}</td>
+                      <td>{fmtPct(r.tasa_reclu)}</td>
+                      <td>{fmtPct(r.tasa_asistencia)}</td>
+                      <td><span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${r.semanas_sobre_n>0?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500'}`}>{r.semanas_sobre_n} sem.</span></td>
+                      <td>{r.cumpl_n_pct>0?`${r.cumpl_n_pct.toFixed(1)}%`:'—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Weekly line charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+          <div className="kpi-card"><h3 className="text-sm font-bold mb-3">Reclutados semanales</h3>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={compData.weekly} barGap={2} barCategoryGap="20%">
+              <BarChart data={weeklyChart} barGap={2} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false}/>
                 <XAxis dataKey="week" tick={{fontSize:9,fill:'#505050'}} axisLine={false} tickLine={false}/>
                 <YAxis tick={{fontSize:10,fill:'#505050'}} axisLine={false} tickLine={false}/>
                 <Tooltip/><Legend wrapperStyle={{fontSize:11}}/>
-                <Bar dataKey="Reclut 2026" fill="#B11C1F" radius={[2,2,0,0]}/>
-                <Bar dataKey="Reclut 2025" fill="#C6C6C6" radius={[2,2,0,0]}/>
+                <Bar dataKey="Reclut. 2026" fill="#B11C1F" radius={[2,2,0,0]}/>
+                <Bar dataKey="Reclut. 2025" fill="#C6C6C6" radius={[2,2,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="kpi-card"><h3 className="text-sm font-bold mb-4">Inicios semanales</h3>
+          <div className="kpi-card"><h3 className="text-sm font-bold mb-3">Iniciados semanales</h3>
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={compData.weekly}>
+              <LineChart data={weeklyChart}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false}/>
                 <XAxis dataKey="week" tick={{fontSize:9,fill:'#505050'}} axisLine={false} tickLine={false}/>
                 <YAxis tick={{fontSize:10,fill:'#505050'}} axisLine={false} tickLine={false}/>
                 <Tooltip/><Legend wrapperStyle={{fontSize:11}}/>
-                <Line dataKey="Inic 2026" stroke="#B11C1F" strokeWidth={2.5} dot={false}/>
-                <Line dataKey="Inic 2025" stroke="#505050" strokeWidth={2} strokeDasharray="4 2" dot={false}/>
+                <Line dataKey="Inic. 2026" stroke="#B11C1F" strokeWidth={2.5} dot={false}/>
+                <Line dataKey="Inic. 2025" stroke="#505050" strokeWidth={2} strokeDasharray="4 2" dot={false}/>
               </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* ALTAS BDD */}
+        <div className="border-t-2 border-gray-100 pt-6">
+          <h3 className="text-base font-bold text-zurko-black mb-1">Nuevos voluntarios — Altas BDD</h3>
+          <p className="text-xs text-zurko-dark mb-4">Agenda 2025 vs Crecimiento BDD 2026 · W1–W{maxW} · filtrado por sede arriba</p>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="kpi-card border-l-4 border-l-brand-red">
+              <p className="kpi-label mb-1">Total altas 2026</p>
+              <p className="text-3xl font-bold text-brand-red">{fmtNum(totalAltas26)}</p>
+              <p className="text-xs text-zurko-dark mt-1">W1–W{maxW} · {compSede==='todas'?'todas las sedes':compSede}</p>
+            </div>
+            <div className="kpi-card border-l-4 border-l-zurko-dark">
+              <p className="kpi-label mb-1">Total altas 2025</p>
+              <p className="text-3xl font-bold text-zurko-dark">{fmtNum(totalAltas25)}</p>
+              <p className="text-xs text-zurko-dark mt-1">Mismo período</p>
+              {totalAltas25>0&&<p className={`text-xs font-semibold mt-1 ${totalAltas26>=totalAltas25?'text-green-600':'text-red-600'}`}>{totalAltas26>=totalAltas25?'+':''}{(((totalAltas26-totalAltas25)/totalAltas25)*100).toFixed(1)}% vs 2025</p>}
+            </div>
+          </div>
+          <div className="kpi-card">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={altasChart} barGap={2} barCategoryGap="25%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false}/>
+                <XAxis dataKey="week" tick={{fontSize:9,fill:'#505050'}} axisLine={false} tickLine={false}/>
+                <YAxis tick={{fontSize:10,fill:'#505050'}} axisLine={false} tickLine={false}/>
+                <Tooltip/><Legend wrapperStyle={{fontSize:11}}/>
+                <Bar dataKey="Altas 2026" fill="#B11C1F" radius={[2,2,0,0]}/>
+                <Bar dataKey="Altas 2025" fill="#C6C6C6" radius={[2,2,0,0]}/>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
