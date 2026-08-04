@@ -1,7 +1,7 @@
 'use client'
 import{useMemo}from'react'
 import{useDashboardStore}from'@/lib/store'
-import{filtrarDatos,calcularKPIResumen,calcularAnalisisTemporal,calcularStats,fmtNum,fmtPct,safe}from'@/lib/kpis'
+import{filtrarDatos,calcularKPIResumen,calcularAnalisisTemporal,calcularStats,fmtNum,fmtPct}from'@/lib/kpis'
 import{DEMO_DATA}from'@/lib/demoData'
 import{PERFILES_DATA}from'@/lib/demoData2'
 import type{ProyectoSemanal,PerfilMes}from'@/lib/types'
@@ -26,7 +26,6 @@ export default function ResumenPage(){
   const sedes=['Madrid','Albacete','Barcelona']
   const totalBDD=sedes.reduce((s,sede)=>s+(latest[sede]?.total_bdd||0),0)
   const bySede=useMemo(()=>sedes.map(sede=>({sede,...calcularKPIResumen(filtered.filter(r=>r.sede===sede))})),[filtered])
-  const conRetraso=filtered.filter(r=>r.retraso===1).length
   const statsReclu=useMemo(()=>calcularStats(weekly.map(w=>w.reclutados)),[weekly])
   const statsIni=useMemo(()=>calcularStats(weekly.map(w=>w.inicios)),[weekly])
   return(<div className="p-6 max-w-[1400px]">
@@ -54,10 +53,7 @@ export default function ResumenPage(){
       <RateCard label="Tasa exclusión" value={kpis.tasa_exclusion} color="amber"/>
       <RateCard label="No válidos" value={kpis.tasa_no_validos} color="purple"/>
     </div>
-    {conRetraso>0&&(<div className="grid grid-cols-2 gap-3 mb-4 mt-6">
-      <div className="kpi-card border-l-4 border-l-amber-500"><p className="kpi-label mb-1">Proyectos con retraso</p><p className="text-2xl font-bold text-amber-600">{fmtNum(conRetraso)}</p><p className="text-xs text-zurko-dark mt-1">{fmtPct(safe(conRetraso,filtered.length))} del total</p></div>
-      <div className="kpi-card border-l-4 border-l-red-500"><p className="kpi-label mb-1">Estudios afectados</p><p className="text-2xl font-bold text-red-600">{Array.from(new Set(filtered.filter(r=>r.retraso===1&&r.presupuesto.startsWith('S0')).map(r=>r.presupuesto))).length}</p></div>
-    </div>)}
+
     <Div t="Estadísticos descriptivos — semanas"/>
     <div className="grid grid-cols-2 gap-3 mb-4">
       <StatCard label="Reclutados por semana" stats={statsReclu}/>

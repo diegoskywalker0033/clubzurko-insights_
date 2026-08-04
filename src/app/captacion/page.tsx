@@ -94,15 +94,15 @@ export default function CaptacionPage(){
           <div className="flex-1 space-y-1.5">{pieCat.map((c,i)=><div key={c.name} className="flex items-center justify-between text-xs"><div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor:PIE_COLORS[i%PIE_COLORS.length]}}/><span className="text-zurko-dark">{c.name}</span></div><span className="font-bold ml-2">{fmtNum(c.value)}</span></div>)}</div>
         </div>
       </div>
-      {/* Fuente bar chart — labels always visible, rotated */}
+      {/* Fuente bar chart — all labels always visible */}
       <div className="kpi-card"><h3 className="text-sm font-bold mb-3">Altas por fuente (top 12)</h3>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={byFuente} layout="vertical" margin={{left:8,right:40}}>
+        <ResponsiveContainer width="100%" height={340}>
+          <BarChart data={byFuente} layout="vertical" barSize={16} margin={{left:8,right:44,top:2,bottom:2}}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false}/>
             <XAxis type="number" tick={{fontSize:9,fill:'#505050'}} axisLine={false} tickLine={false}/>
-            <YAxis dataKey="fuente" type="category" width={130} tick={{fontSize:9,fill:'#505050'}} axisLine={false} tickLine={false}/>
+            <YAxis dataKey="fuente" type="category" width={138} tick={{fontSize:9,fill:'#505050'}} axisLine={false} tickLine={false}/>
             <Tooltip/>
-            <Bar dataKey="altas" name="Altas" fill="#B11C1F" radius={[0,2,2,0]}>
+            <Bar dataKey="altas" name="Altas" fill="#B11C1F" radius={[0,3,3,0]}>
               <LabelList dataKey="altas" position="right" style={{fontSize:9,fill:'#505050',fontWeight:600}}/>
             </Bar>
           </BarChart>

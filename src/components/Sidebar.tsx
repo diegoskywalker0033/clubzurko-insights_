@@ -8,13 +8,13 @@ import clsx from'clsx'
 const navItems=[
   {href:'/inicio',label:'Inicio',icon:Home},
   {href:'/resumen',label:'Resumen Ejecutivo',icon:LayoutDashboard},
+  {href:'/buyer-persona',label:'Buyer Persona',icon:User},
   {href:'/reclutamiento',label:'Reclutamiento',icon:Users},
   {href:'/base-datos',label:'Base de Datos',icon:Database},
   {href:'/captacion',label:'Captación',icon:Megaphone},
   {href:'/presupuesto',label:'Presupuesto',icon:Wallet},
   {href:'/comparativa',label:'Comparativa SPLY',icon:TrendingUp},
-  {href:'/analisis',label:'Análisis',icon:BarChart2},
-  {href:'/buyer-persona',label:'Buyer Persona',icon:User},
+  {href:'/analisis',label:'Análisis de rendimiento',icon:BarChart2},
 ]
 export default function Sidebar(){
   const pathname=usePathname()
