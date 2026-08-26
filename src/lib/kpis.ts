@@ -22,20 +22,15 @@ export function calcularKPIResumen(data:ProyectoSemanal[]){
   return{reclutados,asistentes,inicios,abandonos,exclusiones,no_validos,sol_sin_extra,sol_con_extra,n_proyectos:n,proyectoen_n,proyectoen_nextra,tasa_asistencia:safe(asistentes,reclutados),tasa_inicios:safe(inicios,reclutados),tasa_abandono:safe(abandonos,reclutados),tasa_exclusion:safe(exclusiones,reclutados),tasa_no_validos:safe(no_validos,reclutados),cumplimiento_n:safe(proyectoen_n,n),cumplimiento_nx:safe(proyectoen_nextra,n),semanas_sobre_n:safe(inicios,sol_sin_extra),semanas_sobre_nx:safe(inicios,sol_con_extra),avg_sol_sin_extra_semana:aw('sol_sin_extra'),avg_reclutados_semana:aw('reclutados'),avg_iniciados_semana:aw('iniciados'),avg_sol_sin_extra:n>0?sol_sin_extra/n:null,avg_reclutados:n>0?reclutados/n:null,avg_iniciados:n>0?inicios/n:null,rendimiento_reclu_abs:reclutados-sol_sin_extra,rendimiento_reclu_pct:safe(reclutados,sol_sin_extra),tasa_reclu_vs_inicios:safe(inicios,reclutados)}
 }
 export function calcularStats(values:number[]):{mean:number;median:number;max:number;min:number;std:number}|null{
-  const v=values.filter(x=>x>0)
-  if(!v.length) return null
+  const v=values.filter(x=>x>0);if(!v.length)return null
   const mean=v.reduce((a,b)=>a+b,0)/v.length
-  const sorted=[...v].sort((a,b)=>a-b)
-  const mid=Math.floor(sorted.length/2)
+  const sorted=[...v].sort((a,b)=>a-b),mid=Math.floor(sorted.length/2)
   const median=sorted.length%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2
   const std=Math.sqrt(v.reduce((a,b)=>a+Math.pow(b-mean,2),0)/v.length)
   return{mean,median,max:Math.max(...v),min:Math.min(...v),std}
 }
 export async function parseExcelReclutamiento(file:File):Promise<ProyectoSemanal[]>{
-  const{read,utils}=await import('xlsx')
-  const buf=await file.arrayBuffer()
-  const wb=read(buf,{type:'array'})
-  const ws=wb.Sheets['SEGUIMIENTO SEMANAL PROYECTOS']
+  const{read,utils}=await import('xlsx');const buf=await file.arrayBuffer();const wb=read(buf,{type:'array'});const ws=wb.Sheets['SEGUIMIENTO SEMANAL PROYECTOS']
   if(!ws)throw new Error('No se encontró la hoja: SEGUIMIENTO SEMANAL PROYECTOS')
   const raw=utils.sheet_to_json<Record<string,unknown>>(ws,{defval:0})
   return raw.filter(r=>{const w=Number(r['Week']);return !isNaN(w)&&w>0&&w<100}).map(r=>({week:Number(r['Week']),presupuesto:String(r['Presupuesto']??''),nombre:String(r['Nombre']??''),sede:String(r['Sede']??''),riesgo:String(r['Nivel de Riesgo']??'low'),sol_sin_extra:Number(r['Solicitados sin extra'])||0,sol_con_extra:Number(r['Solicitados con extra'])||0,reclutados:Number(r['Reclutados'])||0,asistencia:Number(r['Asistencia'])||0,iniciados:Number(r['Iniciados'])||0,abandonos:Number(r['Abandonos'])||0,exclusiones:Number(r['Exclusiones'])||0,no_validos:Number(r['No validos'])||0,proyectoen_n:Number(r['Proyectoen_N'])||0,proyectoen_nextra:Number(r['Proyectoen_Nextra'])||0,departamento:String(r['DEPARTAMENTO']??'').trim().toUpperCase(),tipo_estudio:String(r['TIPO DE ESTUDIO']??'').trim().toUpperCase(),cliente:String(r['Cliente']??'').trim(),retraso:String(r['Retraso proyecto']).trim()==='1'||Number(r['Retraso proyecto'])===1?1:0,estado:String(r['Estado']??''),dias_reclutamiento:Number(r['Días de reclutamiento'])||0}))

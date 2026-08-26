@@ -39,25 +39,14 @@ export default function ResumenPage(){
     </div>
     <Div t="KPIs de reclutamiento"/>
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-      <KpiCard label="Reclutados" value={fmtNum(kpis.reclutados)} accent/>
-      <KpiCard label="Asistentes" value={fmtNum(kpis.asistentes)}/>
-      <KpiCard label="Inicios" value={fmtNum(kpis.inicios)}/>
-      <KpiCard label="Proyectos en N" value={fmtNum(kpis.proyectoen_n)}/>
-      <KpiCard label="Sobre objetivo N" value={fmtPct(kpis.semanas_sobre_n)} accent/>
-      <KpiCard label="Sobre N+Extra" value={fmtPct(kpis.semanas_sobre_nx)}/>
+      <KpiCard label="Reclutados" value={fmtNum(kpis.reclutados)} accent/><KpiCard label="Asistentes" value={fmtNum(kpis.asistentes)}/><KpiCard label="Inicios" value={fmtNum(kpis.inicios)}/><KpiCard label="Proyectos en N" value={fmtNum(kpis.proyectoen_n)}/><KpiCard label="Sobre objetivo N" value={fmtPct(kpis.semanas_sobre_n)} accent/><KpiCard label="Sobre N+Extra" value={fmtPct(kpis.semanas_sobre_nx)}/>
     </div>
     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
-      <RateCard label="Tasa asistencia" value={kpis.tasa_asistencia} color="blue"/>
-      <RateCard label="Tasa inicios" value={kpis.tasa_inicios} color="green"/>
-      <RateCard label="Tasa abandono" value={kpis.tasa_abandono} color="red"/>
-      <RateCard label="Tasa exclusión" value={kpis.tasa_exclusion} color="amber"/>
-      <RateCard label="No válidos" value={kpis.tasa_no_validos} color="purple"/>
+      <RateCard label="Tasa asistencia" value={kpis.tasa_asistencia} color="blue"/><RateCard label="Tasa inicios" value={kpis.tasa_inicios} color="green"/><RateCard label="Tasa abandono" value={kpis.tasa_abandono} color="red"/><RateCard label="Tasa exclusión" value={kpis.tasa_exclusion} color="amber"/><RateCard label="No válidos" value={kpis.tasa_no_validos} color="purple"/>
     </div>
-
     <Div t="Estadísticos descriptivos — semanas"/>
     <div className="grid grid-cols-2 gap-3 mb-4">
-      <StatCard label="Reclutados por semana" stats={statsReclu}/>
-      <StatCard label="Iniciados por semana" stats={statsIni}/>
+      <StatCard label="Reclutados por semana" stats={statsReclu}/><StatCard label="Iniciados por semana" stats={statsIni}/>
     </div>
     <Div t="Tendencia semanal"/>
     <div className="kpi-card mb-6">
